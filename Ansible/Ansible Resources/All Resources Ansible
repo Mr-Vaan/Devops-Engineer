@@ -1,4 +1,125 @@
-===================================== ALL RESOURCE ANSIBLE ==============================================
+================================================ ALL RESOURCE ANSIBLE ==============================================================
+
+
+
+
+
+
+
+===================================================== Installing Auditd ==========================================================
+---
+- name: Install dan Konfigurasi auditd
+  hosts: tesaudit
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python2
+    user_password: "seG4R36u$"
+    user_server: "ivan"
+    user_public_key_alive: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPKTmtXUupj/82uDcH4hDOkzH2dRhukPRH6wiefJo8/N ivan@terakorp"
+  tasks:
+
+    - name: Create user client
+      user:
+        name: ivan
+        password: "{{ user_password }}"
+        comment: "{{ user_server }}"
+        createhome: yes
+        shell: /bin/bash
+      become: yes
+
+    - name: Add user client to group terakorp
+      user:
+        name: ivan
+        groups: terakorp
+        append: yes
+      become: yes
+
+    - name: Create .ssh directory for user client
+      file:
+        name: /home/{{ user_server }}/.ssh
+        state: directory
+        owner: "{{ user_server }}"
+        group: "{{ user_server }}"
+      become: yes
+
+    - name: Set permissions for .ssh directory
+      file:
+        name: /home/{{ user_server }}/.ssh
+        owner: "{{ user_server }}"
+        group: "{{ user_server }}"
+        mode: '0700'
+      become: yes
+
+    - name: Add public key to authorized_keys for user client
+      lineinfile:
+        name: /home/{{ user_server }}/.ssh/authorized_keys
+        line: "{{ user_public_key_alive }}"
+        create: yes
+      become: yes
+
+    - name: Add user client to AllowUsers in sshd_config
+      lineinfile:
+        name: /etc/ssh/sshd_config
+        line: "AllowUsers {{ user_server }}"
+      become: yes
+
+    - name: Restart SSH service
+      service:
+        name: ssh
+        state: restarted
+      become: yes
+
+    - name: Install auditd package
+      apt:
+        name: auditd
+        state: present
+
+#    - name: Ensure auditd service is enabled and started
+#      service:
+#        name: auditd
+#        state: started
+#        enabled: yes
+
+    - name: Configure auditd rules aplikasi
+      lineinfile:
+        name: /etc/audit/rules.d/audit.rules
+        line: "-w /var/www/teramedikv5 -p wa -k changes_files"
+        create: yes
+      become: yes
+
+    - name: Restart auditd service
+      service:
+        name: auditd
+        state: restarted
+
+Cara 2 : 
+- name: Install dan Konfigurasi auditd
+  hosts: tesaudit
+  become: true
+  tasks:
+    - name: Install auditd package
+      apt:
+        name: auditd
+        state: present
+
+    - name: Ensure auditd service is enabled and started
+      service:
+        name: auditd
+        state: started
+        enabled: yes
+
+    - name: Configure auditd rules aplikasi
+      lineinfile:
+        name: /etc/audit/rules.d/audit.rules
+        line: "-w /var/www/nama-site -p wa -k changes_files"
+        create: yes
+      become: yes
+
+    - name: Restart auditd service
+      service:
+        name: auditd
+        state: restarted
+
 
 
 
