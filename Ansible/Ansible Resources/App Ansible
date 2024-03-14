@@ -1,0 +1,403 @@
+=========================================== Instalasi Aplikasi ========================================================================
+Cara 1 :
+- name: Install TeramedikV5 Ubuntu Server 22
+  hosts: testansible
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python2
+    user_password: "testing"
+    user_server: "ivan"
+    user_public_key_alive: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPKTmtXUupj/82uDcH4hDOkzH2dRhukPRH6wiefJo8/N ivan@terakorp"
+    packages_to_install:
+      - tzdata
+      - acl
+      - auditd
+      - net-tools
+      - mlocate
+      - lm-sensors
+      - ntpdate
+      - curl
+      - ca-certificates
+      - gnupg
+      - apache2
+      - dropbear
+      - samba
+      - monit
+      - git
+      - python3
+      - python3-pip
+      - python3-psycopg2
+      - nodejs
+      - npm
+      - openvpn
+
+    zabbix_agent_version: "6.4"  # Ganti dengan versi Zabbix Agent
+    zabbix_agent_package: "zabbix-agent-{{ zabbix_agent_version }}"
+    zabbix_agent_repo_url: "https://repo.zabbix.com/zabbix/{{ zabbix_agent_version }}/ubuntu"
+    zabbix_agent_repo_key_url: "{{ zabbix_agent_repo_url }}/pool/main/z/zabbix-release/zabbix-release_6.4-1+ubuntu{{ ansible_distribution_release }}_all.deb" # Lihat di official download zabbix
+    zabbix_server_ip: "172.30.201.249"  # Ganti IP Zabbix Server Target
+
+    php_version: "5.6"
+    php_packages:
+      - php{{ php_version }}-common
+      - php{{ php_version }}-gd
+      - php{{ php_version }}-curl
+      - php{{ php_version }}-soap
+      - php{{ php_version }}-mcrypt
+      - php{{ php_version }}-mbstring
+      - php{{ php_version }}-opcache
+      - php{{ php_version }}-pgsql
+      - php{{ php_version }}-dev
+      - php{{ php_version }}-xml
+      - php{{ php_version }}-xsl
+      - php{{ php_version }}-xmlrpc
+      - php{{ php_version }}-pspell
+      - php{{ php_version }}-cli
+      - php{{ php_version }}-zip
+      - php{{ php_version }}-readline
+      - php{{ php_version }}-json
+      - php{{ php_version }}-cgi
+      - libapache2-mod-php{{ php_version }}
+
+  tasks:
+# ============================================== Login User and add user ========================================
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Create user client
+      user:
+        name: "{{ user_server }}"
+        password: "{{ client_password }}"
+        comment: "{{ user_server }}"
+        createhome: yes
+        shell: /bin/bash
+      become: yes
+
+    - name: Add user client to group terakorp
+      user:
+        name: "{{ user_server }}"
+        groups: terakorp
+        append: yes
+      become: yes
+
+    - name: Create .ssh directory for user client
+      file:
+        name: /home/{{ user_server }}/.ssh
+        state: directory
+        owner: "{{ user_server }}"
+        group: "{{ user_server }}"
+      become: yes
+
+    - name: Set permissions for .ssh directory
+      file:
+        name: /home/{{ user_server }}/.ssh
+        owner: "{{ user_server }}"
+        group: "{{ user_server }}"
+        mode: '0700'
+      become: yes
+
+    - name: Add public key to authorized_keys for user client3
+      lineinfile:
+        name: /home/{{ user_server }}/.ssh/authorized_keys
+        line: "{{ user_public_key_alive2 }}"
+        create: yes
+
+    - name: Add user client to AllowUsers in sshd_config
+      lineinfile:
+        name: /etc/ssh/sshd_config
+        line: "AllowUsers {{ user_server }}"
+      become: yes
+
+    - name: Restart SSH service
+      service:
+        name: ssh
+        state: restarted
+      become: yes
+
+# ===============================================================================================================
+# =============================================== Zabbix ========================================================
+  - name: Add Zabbix repository key
+      apt_key:
+        url: "{{ zabbix_agent_repo_key_url }}"
+        state: present
+
+    - name: Add Zabbix repository
+      apt_repository:
+        repo: "deb {{ zabbix_agent_repo_url }} {{ ansible_distribution_release }} main"
+        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Zabbix Agent
+      apt:
+        name: "{{ zabbix_agent_package }}"
+        state: present
+
+    - name: Configure Zabbix Agent
+      template:
+        src: zabbix_agent.conf.j2
+        dest: /etc/zabbix/zabbix_agentd.conf
+      notify:
+        - restart zabbix-agent
+
+
+# =============================================== Instalasi =====================================================
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+#    - name: Install PHP 5.6 and its modules
+#      apt:
+#        name: "{{ php_packages }}"
+#        state: present
+
+#    - name: Install required packages
+#      apt:
+#        name:
+#          - tzdata
+#          - acl
+#          - auditd
+#          - net-tools
+#          - mlocate
+#          - lm-sensors
+#          - ntpdate
+#          - curl
+#          - ca-certificates
+#          - gnupg
+#          - apache2
+#          - dropbear
+#          - samba
+#          - monit
+#          - git
+#          - python3
+#          - python3-pip
+#          - python3-psycopg2
+#          - nodejs
+#          - npm
+#          - zabbix-agent
+#          - openvpn
+#        state: present
+# ============================================================= Postgresql =========================================================
+#    - name: Add PostgreSQL key
+#      apt_key:
+#        url: http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
+#        state: present
+
+#    - name: Update apt cache
+#      apt:
+#        update_cache: yes
+
+#    - name: Install PostgreSQL 9.6
+#      apt:
+#        name: postgresql-9.6
+#        state: present
+
+     - name: Add an Apt signing key repo postgres
+       ansible.builtin.apt_key:
+         id: B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
+         url: http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
+         keyring: /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
+
+     - name: add repo postgres
+       ansible.builtin.apt_repository:
+          repo: "deb http://apt.postgresql.org/pub/repos/apt jammy-pgdg main"
+          state: present
+
+     - name: Install PostgreSQL 9.6 and its dependencies
+       apt:
+         name: "{{ item }}"
+         state: present
+       with_items:
+         - postgresql-9.6
+         - postgresql-client-9.6
+         - postgresql-contrib-9.6
+
+     - name: copy config postgresql.conf # sesuaikan
+       copy:
+        src: utils/postgresql.conf
+        dest: "/etc/postgresql/9.6/main/postgresql.conf"
+
+     - name: copy config pg_hba.conf
+       copy:
+        src: utils/pg_hba.conf
+        dest: "/etc/postgresql/9.6/main/pg_hba.conf" # sesuaikan
+
+#     - name: restart postgres
+#       service:
+#        name: postgresql
+#        state: restarted
+
+# ================================================================================================================================
+# ================================================================ PHP ===========================================================
+#    - name: Install packages PHP
+#      apt:
+#        name:
+#          - php5.6-common
+#          - php5.6-gd
+#          - php5.6-curl
+#          - php5.6-soap
+#          - php5.6-mcrypt
+#          - php5.6-mbstring
+#          - php5.6-opcache
+#          - php5.6-pgsql
+#          - php5.6-dev
+#          - php5.6-xml
+#          - php5.6-xsl
+#          - php5.6-xmlrpc
+#          - php5.6-pspell
+#          - php5.6-cli
+#          - php5.6-zip
+#          - php5.6-readline
+#          - php5.6-json
+#          - php5.6-cgi
+#          - libapache2-mod-php5.6
+#        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install PHP 5.6 and its modules
+      apt:
+        name: "{{ php_packages }}"
+        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+# ========================================================================================
+
+    # Configure Apache
+    - name: Copy Apache configuration file
+      copy:
+        src: apache2.conf
+        dest: /etc/apache2/apache2.conf
+      notify: Restart Apache
+
+    # Configure PostgreSQL
+    - name: Copy PostgreSQL configuration file
+      copy:
+        src: postgresql.conf
+        dest: /etc/postgresql/9.6/main/postgresql.conf
+      notify: Restart PostgreSQL
+
+    # Configure Samba
+    - name: Copy Samba configuration file
+      copy:
+        src: smb.conf
+        dest: /etc/samba/smb.conf
+      notify: Restart Samba
+
+    # Configure Monit
+    - name: Copy Monit configuration file
+      copy:
+        src: monitrc
+        dest: /etc/monit/monitrc
+      notify: Restart Monit
+
+    # Configure NTP
+    - name: Copy NTP configuration file
+      copy:
+        src: ntp.conf
+        dest: /etc/ntp.conf
+      notify: Restart NTP
+
+    # Configure Zabbix
+    - name: Copy Zabbix configuration file
+      copy:
+        src: zabbix_agentd.conf
+        dest: /etc/zabbix/zabbix_agentd.conf
+      notify: Restart Zabbix Agent
+
+    # Configure OpenVPN
+    - name: Copy OpenVPN configuration files
+      copy:
+        src: openvpn.conf
+        dest: /etc/openvpn/openvpn.conf
+      notify: Restart OpenVPN
+
+    - name: Install packages PHP
+      apt:
+        name:
+          - php5.6-common
+          - php5.6-gd
+          - php5.6-curl
+          - php5.6-soap
+          - php5.6-mcrypt
+          - php5.6-mbstring
+          - php5.6-opcache
+          - php5.6-pgsql
+          - php5.6-dev
+          - php5.6-xml
+          - php5.6-xsl
+          - php5.6-xmlrpc
+          - php5.6-pspell
+          - php5.6-cli
+          - php5.6-zip
+          - php5.6-readline
+          - php5.6-json
+          - php5.6-cgi
+          - libapache2-mod-php5.6
+        state: present
+
+  handlers:
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
+
+    - name: Restart PostgreSQL
+      service:
+        name: postgresql
+        state: restarted
+
+    - name: Restart Samba
+      service:
+        name: smbd
+        state: restarted
+
+    - name: Restart Monit
+      service:
+        name: monit
+        state: restarted
+
+    - name: Restart NTP
+      service:
+        name: ntp
+        state: restarted
+
+    - name: Restart Zabbix Agent
+      service:
+        name: zabbix-agent
+        state: restarted
+
+    - name: Restart OpenVPN
+      service:
+        name: openvpn
+        state: restarted
+
+
+IP public : 202.138.238.12
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
