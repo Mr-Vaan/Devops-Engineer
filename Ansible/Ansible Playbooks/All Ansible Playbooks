@@ -1,8 +1,50 @@
 ===================================================== YAML Syntax ==========================================================
 
+# Execute command dari Server Controller
+- name: Lab Task Failure
+  hosts: managed
+  vars:
+    web_pkg: apache2
+    db_pkg: mariadb-server
+    db_svc: mariadb
 
+  tasks:
+    #    - name: Install {{ web_pkg }} package
+      #      apt:
+        #        name: "{{ web_pkg }}"
+          #        state: present
+          #      ignore_errors: yes   ---> Menghilangkan error
 
+        #    - name: Install {{ db_pkg }} package
+      #      apt:
+        #        name: "{{ db_pkg }}"
+          #  state: present
+          #      ignore_errors: yes  ---> Menghilangkan error
 
+    - name: Execute the command
+      command: hostnamectl
+      register: Result
+
+    - name: Print the Command
+      debug:
+        var: Result.stdout_lines
+
+    - name: Set up webserver
+      block:
+        - name: Install {{ web_pkg }} package
+          apt:
+            name: "{{ web_pkg }}"
+            state: present
+      rescue:
+        - name: Install {{ db_pkg }} package
+          apt:
+            name: "{{ db_pkg }}"
+            state: present
+      always:
+        - name: Start {{ db_svc }} service
+          service:
+            name: "{{ db_svc }}"
+            state: started
 
 
 
