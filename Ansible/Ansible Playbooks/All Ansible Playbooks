@@ -24,6 +24,7 @@
     - name: Execute the command
       command: hostnamectl
       register: Result
+#     changed_when: false
 
     - name: Print the Command
       debug:
@@ -35,6 +36,8 @@
           apt:
             name: "{{ web_pkg }}"
             state: present
+#         failed_when: web_pkg == "apache2"
+
       rescue:
         - name: Install {{ db_pkg }} package
           apt:
@@ -46,7 +49,7 @@
             name: "{{ db_svc }}"
             state: started
 
-
+============================================================================================================================
 
 
 
