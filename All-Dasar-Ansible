@@ -1,0 +1,401 @@
+
+
+1. Create a ssh-keygen so you can ssh without a password
+
+student@pod-username-controller:~$ ssh-keygen
+student@pod-username-managed1:~$ ssh-keygen
+student@pod-username-managed2:~$ ssh-keygen
+
+
+2. Copy all public key from regular user to all nodes
+
+student@pod-username-controller:~$ ssh-copy-id student@pod-username-controller
+student@pod-username-controller:~$ ssh-copy-id student@pod-username-managed1
+student@pod-username-controller:~$ ssh-copy-id student@pod-username-managed2
+...
+student@pod-username-managed1:~$ ssh-copy-id student@pod-username-controller
+student@pod-username-managed1:~$ ssh-copy-id student@pod-username-managed1
+student@pod-username-managed1:~$ ssh-copy-id student@pod-username-managed2
+...
+student@pod-username-managed2:~$ ssh-copy-id student@pod-username-controller
+student@pod-username-managed2:~$ ssh-copy-id student@pod-username-managed1
+student@pod-username-managed2:~$ ssh-copy-id student@pod-username-managed2
+
+
+3. Check if the host can access without using a password (passwordless).
+
+student@pod-username-controller:~$ ssh student@pod-username-controller "whoami; hostname"
+student@pod-username-controller:~$ ssh student@pod-username-managed1 "whoami; hostname"
+student@pod-username-controller:~$ ssh student@pod-username-managed2 "whoami; hostname"
+...
+student@pod-username-managed1:~$ ssh student@pod-username-controller "whoami; hostname"
+student@pod-username-managed1:~$ ssh student@pod-username-managed1 "whoami; hostname"
+student@pod-username-managed1:~$ ssh student@pod-username-managed2 "whoami; hostname"
+...
+student@pod-username-managed2:~$ ssh student@pod-username-controller "whoami; hostname"
+student@pod-username-managed2:~$ ssh student@pod-username-managed1 "whoami; hostname"
+student@pod-username-managed2:~$ ssh student@pod-username-managed2 "whoami; hostname"
+
+
+4. Create swap file. Only executed in the controller
+
+#creating a file which will be used for swap:
+sudo fallocate -l 2G /swapfile
+
+#Only the root user should be able to write and read the swap file. Set the correct permissions by typing:
+sudo chmod 600 /swapfile
+
+#Use the mkswap utility to set up a Linux swap area on the file:
+sudo mkswap /swapfile
+
+#Activate the swap file using the following command:
+sudo swapon /swapfile
+
+#To make the change permanent open the /etc/fstab file. add to new line don't change anything already exist:
+#sudo vim /etc/fstab
+#and paste the following line:
+...
+/swapfile swap swap defaults 0 0
+...
+#verify
+sudo swapon --show
+
+
+1. Create the /home/ivan/.nusactl/hosts.yaml file
+
+student@pod-username-controller:~$ vim /home/ivan/.nusactl/hosts.yaml
+...
+nodes:
+  pod-controller: "10.7.7.10" #IP enp0s9 controller
+  pod-managed1: "10.7.7.20" #IP enp0s9 Managed1
+  pod-managed2: "10.7.7.30" #IP enp0s9 Managed2
+ssh-key: "/home/ivan/.ssh/id_rsa" # must be static path
+ssh-passwd: "academy123" # change the password and password must be same every node
+Note : Be careful this yaml file is sensitive to indents and spaces make sure it is the same as the guide.
+
+
+2. automate ssh-add automatically when logged in
+
+sudo apt install -y keychain && echo "eval $(keychain -q --eval id_rsa)" >> .bashrc && source .bashrc
+
+
+
+1. install the required package.
+
+student@pod-[username]-controller:~$ sudo apt update
+student@pod-[username]-controller:~$ sudo apt install -y software-properties-common
+
+2. configure the PPA on pod-username-controller and install ansible.
+
+student@pod-[username]-controller:~$ sudo add-apt-repository --yes --update ppa:ansible/ansible
+student@pod-[username]-controller:~$ sudo apt install ansible
+student@pod-[username]-controller:~$ ansible --version
+
+3. Setup default configuration ansible.
+
+student@pod-[username]-controller:~$ sudo mkdir -p /etc/ansible
+student@pod-[username]-controller:~$ sudo vim /etc/ansible/hosts
+pod-[username]-managed1
+
+[webservers]
+pod-[username]-managed2
+
+4. Show all hosts from inventory.
+
+student@pod-[username]-controller:~$ ansible all --list-hosts
+
+5. Show ungrouped hosts from inventory.
+
+student@pod-[username]-controller:~$ ansible ungrouped --list-hosts
+
+6. Show hosts in group webservers.
+
+student@pod-[username]-controller:~$ ansible webservers --list-hosts
+
+7. Check ping to all node.
+
+student@pod-[username]-controller:~$ ansible all -m ping
+
+
+Create the working directory, and change into it.
+student@pod-username-controller ~$ mkdir ~/managing-inventory  
+student@pod-username-controller ~$ cd ~/managing-inventory   
+
+Create an inventory file in the working directory. Use the Server Inventory Specifications table as a guide. In addition, create a new group called Indonesia from the combined location group and add pod-username-contoller as ungrouped host.
+student@pod-username-controller:~/managing-inventory$ vim inventory
+---
+pod-username-controller
+
+[Bogor]  
+pod-username-managed1  
+
+[Jakarta]  
+pod-username-managed2
+
+[WebServers]  
+pod-username-managed[1:2] 
+
+[Testing]  
+pod-username-managed1 
+
+[Development]  
+pod-username-managed2
+
+[Indonesia:children]    
+Jakarta
+Bogor
+2. Verify the managed hosts or groups in the custom the inventory file.
+
+Check the list of all hosts.
+student@pod-username-controller:~/managing-inventory$ ansible all -i inventory --list-hosts  
+  hosts (3):
+    pod-username-controller
+    pod-username-managed1
+    pod-username-managed2
+
+Check the list of ungrouped hosts.
+student@pod-username-controller:~/managing-inventory$ ansible ungrouped -i inventory \
+> --list-hosts
+  hosts (1):
+    pod-username-controller
+
+Check host pod-username-managed1 in the list of hosts in the inventory file.
+student@pod-username-controller:~/managing-inventory$ ansible pod-username-managed1 \
+> -i inventory --list-hosts
+  hosts (1):
+    pod-username-managed1
+
+Check the list of hosts in the Development group.
+student@pod-username-controller:~/managing-inventory$ ansible Development \
+> -i inventory  --list-hosts
+  hosts (1):
+    pod-username-managed2
+
+Check the list of hosts in the Testing group.
+student@pod-username-controller:~/managing-inventory$ ansible Testing \
+> -i inventory  --list-hosts
+  hosts (1):  
+   pod-username-managed1
+
+Check the list of hosts in the Indonesia group.
+student@pod-username-controller:~/managing-inventory$ ansible Indonesia \
+> -i inventory --list-hosts  
+  hosts (2):  
+    pod-username-managed2
+    pod-username-managed1
+
+1. Create a new directory.
+
+student@pod-username-controller:~$ cd ~/
+student@pod-username-controller:~$ mkdir -p deploy-review
+student@pod-username-controller:~$ cd deploy-review
+
+2. Create ansible configuration.
+
+student@pod-username-controller:~/deploy-review$ vim ansible.cfg
+[defaults]
+inventory = ./inventory
+remote_user = student
+host_key_checking = False
+
+3. Create inventory.
+
+student@pod-username-controller:~/deploy-review$ vim inventory
+[servers]
+pod-username-managed1
+pod-username-managed2
+
+4. Run ansible with ad-hoc command.
+
+student@pod-username-controller:~/deploy-review$ ansible servers -m command -a 'id'
+...
+student@pod-username-controller:~/deploy-review$ ansible servers -m copy \
+> -a "content='This server is managed by Ansible. \n' dest=/etc/motd" --become
+...
+student@pod-username-controller:~/deploy-review$ ansible servers -m command -a 'cat /etc/motd'
+
+5. Verify.
+
+student@pod-username-controller:~/deploy-review$ ssh pod-username-managed1 "whoami; cat /etc/motd"
+student@pod-username-controller:~/deploy-review$ ssh pod-username-managed2 "whoami; cat /etc/motd"
+
+1. Create directory.
+
+student@pod-username-controller:~$ cd ~/
+student@pod-username-controller:~$ mkdir -p playbook-basic/files
+student@pod-username-controller:~$ cd playbook-basic
+
+2. Create ansible configuration.
+
+student@pod-username-controller:~$ vim ansible.cfg
+[defaults]
+inventory = ./inventory
+remote_user =student
+
+3. Create inventory.
+
+student@pod-username-controller:~$ vim inventory
+[web]
+pod-username-managed1
+
+4. Create playbook.
+
+student@pod-username-controller:~$ echo "This is a test page." > files/index.html
+
+student@pod-username-controller:~$ vim site.yml
+---
+- name: Install and start Apache 2
+  hosts: web
+  become: true
+  tasks:
+    - name: apache2 package is present
+      apt: name=apache2 state=present
+
+    - name: correct index.html is present
+      copy:
+        src: ./files/index.html
+        dest: /var/www/html/index.html
+
+    - name: Apache 2 is started
+      service:
+        name: apache2
+        state: started
+        enabled: true
+
+5. Run playbook.
+
+student@pod-username-controller:~$ ansible-playbook site.yml
+
+6. Verify webserver.
+
+student@pod-username-controller:~$ curl pod-username-managed1
+
+
+1. Create a directory.
+
+student@pod-username-controller:~$ cd ~
+student@pod-username-controller:~$ mkdir data-variables/
+student@pod-username-controller:~$ cd data-variables/
+
+2. Create ansible local configuration.
+
+student@pod-username-controller:~$ vim ansible.cfg
+[defaults]
+inventory = ./inventory
+remote_user = student
+host_key_checking = False
+
+3. Create an inventory.
+
+student@pod-username-controller:~$ vim inventory
+[webserver]
+pod-username-managed2
+
+
+4. Create playbook.
+
+student@pod-username-controller:~$ vim playbook.yml
+---
+- name: Install and Ensure the Apache2 service started
+  hosts: webserver
+  become: true
+  vars:
+    web_pkg: apache2
+    web_service: apache2
+    python_pkg: python3-urllib3
+
+  tasks:
+    - name: Required packages are installed and up to date
+      apt:
+        update_cache: yes
+        force_apt_get: yes
+        name:
+          - "{{web_pkg}}"
+          - "{{python_pkg}}"
+        state: latest
+
+    - name: The {{web_service}} service is started and enabled
+      service:
+         name: "{{web_service}}"
+         enabled: true
+         state: started
+
+    - name: Web content is in place
+      copy:
+        content: "Hello World! ansible is fun."
+        dest: /var/www/html/index.html
+
+- name: Verify the web server is accessible
+  hosts: localhost
+  tasks:
+    - name: Testing web server
+      uri:
+        url: http://pod-username-managed2
+        status_code: 200
+        return_content: yes
+      register: Result
+
+    - name: Print Ouput web server
+      debug:
+        var: Result.content
+
+5. Running playbook.
+
+student@pod-username-controller:~$ ansible-playbook --syntax-check playbook.yml
+student@pod-username-controller:~$ ansible-playbook playbook.yml
+
+6. Verify webserver.
+
+student@pod-username-controller:~$ curl pod-username-managed2
+
+
+1. Create directory.
+
+student@pod-username-controller:~$ cd ~
+student@pod-username-controller:~$ mkdir jinja2-template
+student@pod-username-controller:~$ cd ~/jinja2-template
+
+2. Create inventory.
+
+student@pod-username-controller:~$ vim inventory
+[webservers]
+pod-username-managed1
+
+3. Create playbook.
+
+student@pod-username-controller:~$ vim site.yml
+---
+- name: install and start apache2
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: ensure apache2 package is present
+      apt:
+        name: apache2
+        state: present
+        update_cache: yes
+        force_apt_get: yes
+
+    - name: restart apache2 service
+      service: name=apache2 state=restarted enabled=yes
+
+    - name: copy index.html
+      template: src=<username>.html.j2 dest=/var/www/html/<username>.html
+
+4. Create Jinja 2 template.
+
+student@pod-username-controller:~$ vim <username>.html.j2
+Hello World!
+This is <username> site.
+
+5. Run playbook.
+
+student@pod-username-controller:~$ ansible-playbook -i inventory site.yml
+
+6. Verify.
+
+student@pod-username-controller:~$ curl pod-username-managed1/<username>.html
+
+
+
