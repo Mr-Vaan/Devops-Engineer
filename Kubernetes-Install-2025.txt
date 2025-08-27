@@ -1,0 +1,361 @@
+Cara 2 :
+
+# Ini adalah konfigurasi jaringan yang ditulis oleh 'subiquity'
+network:
+  ethernets:
+    enp4s0:
+      dhcp4: false
+  bridges:
+    br0:
+      interfaces: [ens160]
+      addresses: [10.23.1.7/22]
+      gateway4: 10.23.0.1
+      nameservers:
+        addresses: [8.8.8.8, 8.8.4.4]
+        search: []
+version: 2
+
+Cara 3 :     Pakai cara ini kalau singgle server dan tidak ada bridges 
+
+# This is the network config written by 'subiquity'
+network:
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses:
+      - 192.168.43.20/24
+      routes:
+      - to: 0.0.0.0/0
+        via:  192.168.43.1
+      nameservers:
+        addresses: [8.8.8.8,1.1.1.1]
+  version: 2
+
+========================= K9s Implemmentation ========================
+
+K9s-Controller-Master : 192.168.99.20 | 192.168.99.18
+K9s-Controller-Manager : 192.168.99.24 | 192.168.99.12
+K9s-Worker-01 : 192.168.99.21 |  192.168.99.13
+K9s-Worker-02 : 192.168.99.22 | 192.168.99.17
+K9s-Worker-03 : 192.168.99.23 | 192.168.99.14
+
+Tambahkan Host :
+192.168.99.20	K9s-Controller-Master
+192.168.99.21	K9s-Controller-Manager
+192.168.99.22	K9s-Worker-01
+192.168.99.23	K9s-Worker-02
+192.168.99.24	K9s-Worker-03
+
+Test Ping :
+--- K9s-Controller-Master ping statistics ---
+root@K9s-Controller-Master:~# ping K9s-Controller-Master
+PING K9s-Controller-Master (192.168.99.20) 56(84) bytes of data.
+64 bytes from K9s-Controller-Master (192.168.99.20): icmp_seq=1 ttl=64 time=0.049 ms
+
+root@K9s-Controller-Master:~# ping K9s-Controller-Manager
+PING K9s-Controller-Manager (192.168.99.21) 56(84) bytes of data.
+64 bytes from K9s-Controller-Manager (192.168.99.21): icmp_seq=1 ttl=64 time=0.603 ms
+
+root@K9s-Controller-Master:~# ping K9s-Worker-01
+PING K9s-Worker-01 (192.168.99.22) 56(84) bytes of data.
+64 bytes from K9s-Worker-01 (192.168.99.22): icmp_seq=1 ttl=64 time=0.569 ms
+
+root@K9s-Controller-Master:~# ping K9s-Worker-02
+PING K9s-Worker-02 (192.168.99.23) 56(84) bytes of data.
+64 bytes from K9s-Worker-02 (192.168.99.23): icmp_seq=1 ttl=64 time=0.454 ms
+
+root@K9s-Controller-Master:~# ping K9s-Worker-03
+PING K9s-Worker-03 (192.168.99.24) 56(84) bytes of data.
+64 bytes from K9s-Worker-03 (192.168.99.24): icmp_seq=1 ttl=64 time=0.539 ms
+
+K9s-Controller-Master : 192.168.99.20 :
+Install Docker CE :
+root#curl -fsSL https://get.docker.com -o get-docker.sh
+root#sudo sh ./get-docker.sh --dry-run
+root#curl -fsSL https://get.docker.com -o get-docker.sh
+root#sudo sh get-docker.sh
+
+Install Docker Compose :
+root#curl -SL https://github.com/docker/compose/releases/download/v2.38.1/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+root#chmod 777 /usr/local/bin/docker-compose
+root#sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+root# ll /usr/local/bin/
+root# docker-compose -v
+
+Konfigurasi SSH Disemua Server:
+root# ssh-keygen -t ed25519 (user root, ivan, dan otomatis).
+
+root@K9s-Controller-Master:~# cat ~/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOLCobU4dUL3/GJsRNgOJizGQLtLlEb6oBpzt/qK7Bg4 root@K9s-Controller-Master
+root@K9s-Controller-Master:~# cat /home/ivan/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINBVrTVPZIwk97obVr18vVLyohkZttkGYBKc7PVyd6D5 ivan@K9s-Controller-Master
+root@K9s-Controller-Master:~# cat /home/otomatis/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID209rRHlxvoKRBBowqiPTjKAqopvNVkD+YF6Iq0t1vR otomatis@K9s-Controller-Master
+==============================================================
+root@K9s-Worker-01:~# cat ~/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFg5aNUrdjTJlhYL4Qj8siFKXWZJ2og5+CSAUN0tyLVR root@K9s-Worker-01
+root@K9s-Worker-01:~# cat /home/ivan/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNaOQAOcPpjGm+z46v+gzBa/RXuWy91AUdvMuczyihC ivan@K9s-Worker-01
+root@K9s-Worker-01:~# cat /home/otomatis/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHvO3O8ORhwoX4+ZrLEHNh+A6ILSDWiai/zEjaZG1W3o otomatis@K9s-Worker-01
+==============================================================
+root@K9s-Worker-02:~# cat ~/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJelXfX1IxyzO0F2PRH+3QmC9R6EbtJVZ1gd4RG5Kl2J root@K9s-Worker-02
+root@K9s-Worker-02:~# cat /home/ivan/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII//QY2MjAHoUpJ60nAnD4/lXpVFPbfisvG+FHq3ngen ivan@K9s-Worker-02
+root@K9s-Worker-02:~# cat /home/otomatis/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIBCSseL/1HeMy6IGykU3xvNrGQwMlYXx6K1caB4yuwb otomatis@K9s-Worker-02
+==============================================================
+root@K9s-Worker-03:~# cat ~/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIoFu2rqKw51q/eaaVv7SfJETb6Kao2pzibkPXHQ6b5G root@K9s-Worker-03
+root@K9s-Worker-03:~# cat /home/ivan/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMQfY6iR6y8apvzFKP2vBv8VmYF6o/rOB2RAvyx9/n8M ivan@K9s-Worker-03
+root@K9s-Worker-03:~# cat /home/otomatis/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFF3qP4et/ccxPOzo37uw48q7dhykjVCPJykLxBdPFlN otomatis@K9s-Worker-03
+==============================================================
+root@K9s-Controller-Manager:~# cat ~/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyMvXgwAm9+krC/9DiRoIjM+ug6iw1ycJ1fGzwCJom2 root@K9s-Controller-Manager
+root@K9s-Controller-Manager:~# cat /home/ivan/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAvZbv/kdYfd+Eer3wlfjjGrplVzRhOp7emXS/EpuLgc ivan@K9s-Controller-Manager
+root@K9s-Controller-Manager:~# cat /home/ivan/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAvZbv/kdYfd+Eer3wlfjjGrplVzRhOp7emXS/EpuLgc ivan@K9s-Controller-Manager
+
+Keygen :
+#ed25519
+K9s-Controller-Master :
+root : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOLCobU4dUL3/GJsRNgOJizGQLtLlEb6oBpzt/qK7Bg4 root@K9s-Controller-Master
+ivan : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINBVrTVPZIwk97obVr18vVLyohkZttkGYBKc7PVyd6D5 ivan@K9s-Controller-Master
+otomatis : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID209rRHlxvoKRBBowqiPTjKAqopvNVkD+YF6Iq0t1vR otomatis@K9s-Controller-Master
+
+K9s-Worker-01 :
+root : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFg5aNUrdjTJlhYL4Qj8siFKXWZJ2og5+CSAUN0tyLVR root@K9s-Worker-01
+ivan : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNaOQAOcPpjGm+z46v+gzBa/RXuWy91AUdvMuczyihC ivan@K9s-Worker-01
+otomatis : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHvO3O8ORhwoX4+ZrLEHNh+A6ILSDWiai/zEjaZG1W3o otomatis@K9s-Worker-01
+
+K9s-Worker-02 :
+root : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJelXfX1IxyzO0F2PRH+3QmC9R6EbtJVZ1gd4RG5Kl2J root@K9s-Worker-02
+ivan : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII//QY2MjAHoUpJ60nAnD4/lXpVFPbfisvG+FHq3ngen ivan@K9s-Worker-02
+otomatis : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIBCSseL/1HeMy6IGykU3xvNrGQwMlYXx6K1caB4yuwb otomatis@K9s-Worker-02
+
+K9s-Worker-03 :
+root : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIoFu2rqKw51q/eaaVv7SfJETb6Kao2pzibkPXHQ6b5G root@K9s-Worker-03
+ivan : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMQfY6iR6y8apvzFKP2vBv8VmYF6o/rOB2RAvyx9/n8M ivan@K9s-Worker-03
+otomatis : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFF3qP4et/ccxPOzo37uw48q7dhykjVCPJykLxBdPFlN otomatis@K9s-Worker-03
+
+K9s-Controller-Manager :
+root : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyMvXgwAm9+krC/9DiRoIjM+ug6iw1ycJ1fGzwCJom2 root@K9s-Controller-Manager
+ivan : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAvZbv/kdYfd+Eer3wlfjjGrplVzRhOp7emXS/EpuLgc ivan@K9s-Controller-Manager
+otomatis : ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDrgVQBPggeoyOWA11V9kAsLsCSGKs5CBSG+zbvymQE1 otomatis@K9s-Controller-Manager
+
+#Keygen
+#ed25519
+#K9s-Controller-Master :
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOLCobU4dUL3/GJsRNgOJizGQLtLlEb6oBpzt/qK7Bg4 root@K9s-Controller-Master
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINBVrTVPZIwk97obVr18vVLyohkZttkGYBKc7PVyd6D5 ivan@K9s-Controller-Master
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID209rRHlxvoKRBBowqiPTjKAqopvNVkD+YF6Iq0t1vR otomatis@K9s-Controller-Master
+#K9s-Worker-01 :
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFg5aNUrdjTJlhYL4Qj8siFKXWZJ2og5+CSAUN0tyLVR root@K9s-Worker-01
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNaOQAOcPpjGm+z46v+gzBa/RXuWy91AUdvMuczyihC ivan@K9s-Worker-01
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHvO3O8ORhwoX4+ZrLEHNh+A6ILSDWiai/zEjaZG1W3o otomatis@K9s-Worker-01
+#K9s-Worker-02 :
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJelXfX1IxyzO0F2PRH+3QmC9R6EbtJVZ1gd4RG5Kl2J root@K9s-Worker-02
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII//QY2MjAHoUpJ60nAnD4/lXpVFPbfisvG+FHq3ngen ivan@K9s-Worker-02
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIBCSseL/1HeMy6IGykU3xvNrGQwMlYXx6K1caB4yuwb otomatis@K9s-Worker-02
+#K9s-Worker-03 :
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIoFu2rqKw51q/eaaVv7SfJETb6Kao2pzibkPXHQ6b5G root@K9s-Worker-03
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMQfY6iR6y8apvzFKP2vBv8VmYF6o/rOB2RAvyx9/n8M ivan@K9s-Worker-03
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFF3qP4et/ccxPOzo37uw48q7dhykjVCPJykLxBdPFlN otomatis@K9s-Worker-03
+#K9s-Controller-Manager :
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyMvXgwAm9+krC/9DiRoIjM+ug6iw1ycJ1fGzwCJom2 root@K9s-Controller-Manager
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAvZbv/kdYfd+Eer3wlfjjGrplVzRhOp7emXS/EpuLgc ivan@K9s-Controller-Manager
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDrgVQBPggeoyOWA11V9kAsLsCSGKs5CBSG+zbvymQE1 otomatis@K9s-Controller-Manager
+
+#Keygen
+#RSA
+K9s-Controller-Master :
+root : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCZ5L1YVq4dM9LqFaQ+LzyNS3fTozxX20Lngkg2gW/4MtK14DyCzKOicdmmLSnEZLQ0GpzbK/4HV3VUG7mkKnld+VbWy+PfevH/Yb/rtHzenj7mIq49QpM8SjE3oCPVHzu253DjtRJAXwOgJpbUpbDDAemErOKrAWJX6RbnFLcUe8MeWIJya/DzAtAo62soaMd7cZPHIGWKqssnMhZdoD6RStuiLYtkENbuLwLOnUoanz8FKxPuc8HJE4Q4JIPcMLX3IIImwfWRCUuKnRRCw0i/GQ0MklBDoHCsJNIjnevPU9q1lpKZCACWIeiuCTYR1PinJabgtUrPiYLePc0SazdyRgvsQzXIgJNQQ+B4WCNq2ylPvym6N2MhAWNFgg3O+EUX+DGF64Trkur1WPKcI123c6tEpJEREJ9fePBPl6+XAv3RL0ZJR+AekBGAk+m10gcz55RS2n2Q6hUd8PYpTgOyUXgvXwx8ENyTM15hSpuZV8QKG10jgc6oESX1UGN52X0= root@K9s-Controller-Master
+
+ivan : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCvkm+9sUWtKKjhbRV+B8SxSqnHaV5SmzER2gw3OwP7FHNHjBSMeVEDpSFvymUE/prqX7eyY8/WrjBd06B3kzVlhV2vYHG4Qemvnyt3vcJ2bAsOWv+KMm+qoXqH3U8RVqWL3F3ohdVNfGK/liTDTy/m3qM6DhJLyMBNsSeBL5J1c2f+9WF6ZYYzevqnNEjEk7+ErShLtEyJOtvFy5CY2frwhL3QBYA31zypwMT5w2IVKV1cGBMMZw2suE43URF4DQLeOhp5ItcF8T8x1J2U04DqaFwuYa8sJSXDl+/MPDYgE67rF2OvPd/sIrN88gTuC9X5Rsob5lr/qCj2IB+SMB6iVHxEEp1L4EHjk0uZN8XYSrFHzcqG2n8vB65cx79WGIzjnFbeZUoHzli6eibMB4Q9cjmJ48hUKJpa9adYeYHLvRPu/55stpl2KtMjv+vGaA431KQXat5XX0/0qFXzcRiH90O/z4/iagAkaNeEGHvcz/GhFAtC0cgordmLhYM6OiU= ivan@K9s-Controller-Master
+
+otomatis : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDoyRYnAG8+/Vx3yZSlWyojupL4dkj2HInOgk2HiEMnvbw/5+Bgd0bhOxh0t5Ke9aDbR1O4q/Y8GwzDJfhoAoxzZ4EmT7xu1KHK7f3ECwkESXWhCjb+zScerMHyOK1nbm9rOSrpdvc49hxmlVMas8zoqRxhnZdLuvLvt+t7ptkQiDylp2l4Cv+yU8KqduUTaJoQe2QZ/AYa/Ncm7aYjkvQMKy98dsi/iLn9msjVukuSFmydHxjbrJgvWvbDbxQNk6QXxl+nT59L3QKhVSWWXxuR+hQ1yvBFXdr88vjb/LMlb35eYbn0WxIOjY4qKep2o1z6zEZw7vjbTrPx5GIU1rj6NOwtf0smUxyk9zm3g2cEWiDv3wTZNgWFVESWui+2g5GD5vM/z0NE0AZAAWlE+GyBk9XjQ6em0Kgr3v72lX96UOhKCnAAjwf1+DmFnq0MDDA4PCXgm0mKrXrf3jdoNpIH01VaSFHZtJLSlSkSMFRyLFsqR1cMbPwFLNPwY6NZKZE= otomatis@K9s-Controller-Master
+
+K9s-Worker-01 :
+root : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDHSTKrf50r0QrKfadi4X5ZeqSML4k3hOQ2fXUa1k2Zv3hD27ISPRTSQEWzATMKcrVqHgycTwNiRi+bHbd7UYXUjEeQyD/1BrVBySXO17w5T9w2w2wmelvCAMx3f2yAY8BjWtc4ZRVtfbAtxZpc4hS8hHJNe//QkX3rZFNFVeN7d8egmp4aUtV9Lsif435tB96gHTft4BKaIecSnjMflwd7O8feMYHBieH3dMUwpYlb/IOxkHwYSiPj5eKeRd6yDcs/ntxRR2uHiQ6VISgyY94Sn7RAI/1JN7zvlzklSZ8QKZDzj3vk/2pevqjISthIbpSoJIGQ32RFBxlL/lm9MZPCRzTj2E8b1PZ/xABot2sYrl/80/WG1ybsGPZqb1Pfv60KNWYjIEa0MRZqYbOO9aFKK5tbCeDRc8FA4k51n93XsYIb30/hrCeX3WEUe+zcudG2Po5EJ1bpJ8pAEHdsGZEAa3Cpjq203y82JauiwOu44G+BX/BlzU8pqttBPS4qve8= root@K9s-Worker-01
+
+ivan : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDCTau7Ji+HrzATJ9WI40Tols6YmpYTRD/RWDUSi7U5D9uRZ4d5lME8R0yYKoWagm1dVkbALMCYdglCjMHlMU5fpAEWFWBdoVGhVl3LIaR21kY4BiPK/kLj/Nv/bgR47ZE15ezafdqbCwz/sKjwwnE4nMEslENqG6T4+2+YOOyQOGvpeutdEpzNre7/gSnETce/3gnMQp+Dl8bzFCllgPjiOtLEnIZmnSmStg7ycuGLoUVTwhZJjNrvQ6yu1CPPHVZXn5PDQyYjRppv4Gu1+yz6BXfWbCHQRqnH/98N19pw3ygZcqoleIKT+vhUMbDPOJIZLal+YA212sidtSLl4DNBkAcSl3DxsybH2DhQGfAZ8hyFxCEr8oEtU0w8ZDH/AtaPFP1kbjCrws+d+voD5kDE7g7P8tZnU6lMM3zSZ730kpN/wh0/xRjVus2wAps9lFgbDPbNRgDfRrqIY3MxigauyPbicwOOZxU5OMJrY9LgV8DF2dwd+ctIv00b6mXqias= ivan@K9s-Worker-01
+
+otomatis : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDum1QC/VRm1E3rFJLGnolgU1cU6ZKWrUuTKPoPaww5MBozKhe74L38DuFCNro3a4cqq1K2Gcj52KjEgJZ+ezs+Y0PHCJgaDSKO8MiHBCrz9A4qZupcAIyq0s9iy/pf9K2Ef11OOlgtYCPmYThPeE7cR5GBtMyqEWMBObR4CxsKYJB6sShpPr6Wux0wvOG5Y/L+THmIDIiXyXiLK4Ts5Gy+62vTVP/jW68BkDlMXsFhOV86KA0fnEpmiLL/J/J6ud9f+megKd4c5ans2nd8XNTANHqWu7yUxnzP+JFaY9ObGahaXAmAN8/pEWFl+zozdV9xJRFSwZ5hRP3GJn1Q+sjEZHrQ9WHlOWKQ8yEbw3BUXUH3oFg/sG8cgfeaAGuFe2YHDMy5RAlDa7X/J/v6NU6YLzVSpid/tGgX9DexmXx9ApUgNjIiqyRJv8wHJlKGK3j0/mNfgq0JFUrvCrq5zPU5PFtundQFs3kYhFenmO8SKlo73xXymsNgBnyLIk+Cocs= otomatis@K9s-Worker-01
+
+K9s-Worker-02 :
+root : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCQSXVLFQiObAqmiAkrOvWLyEMIt/uuGSQN4JjrIi4f7GxEsyQrIjT8v6aWe/I9lzqbR/X6Y9J9uiv024cfemCM1urELdQ6dq9I1EKcwbgrE6hW1gj4HHErS2pVmx4hJhHjk0+1RC57goA983wb5NQXNU4N9KjxLzwle1ljhGOnOsWgbTBldMEibX/nNVCSzKHTzc+smnB13GfD/6AopPmmXmv51Wni/UTOu5HtM0/Z5c/SCs3z//FeTXsCWdVHWC8cI0PjLVHqMaGZKzmvLmeQwn01Vb3TYvOFOq+C1mXafxgboooK1RK9YvFv8IOKsY8bTBUxT9JG9LgXal2WTOxZRS74MaXFGM48gWINfyCD85O8Knd61a+tgLiv7OsNWedWtDJ538ZuEmMIfNPYqoqfUOBn/FKnQTy7qPSdSuM23Wv9DiGAFSJc8ogt+nuAVR/DEVZzTlOH5SK/hW3Rw4FvMkn9f3fuamx6sDoND/0umQZI8gJMaRDcqNMHG8FzpGk= root@K9s-Worker-02
+
+ivan : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCqyNmcu29xjaD8yIEkoyII+ZGnEqidYqQnV46Eaw8hMULuSbfwAa+HvZQORyMXGCLWUBc5LLjBOu2u/cSSJIkzgtuaneof+fJL7mMidDxbxTRdKVbOtzC+K6foD4YTBa+Aor1HkfNqryfR2+hoj4BO2z4y4LMgxrfbtlmvAejrcdXRFLgZrhDlRi0HZS+zH2yC6CACcaduUSwrbWZIschxBXq68MrFA+YMcmbf7yK5Keu93X/j+MwQSbYD1bRu/JVLzKWk5Mx8KmdBu3QjFN1Pkt/y5IHOU/SbZtx8cCHe/M93FM+lUR0AamCAsQqdYBskdS/w5H8/PHmvV1z99mCuVZjrDRy24guc0/hhuF0mBJmJsxf6y8gFR5F6QY0BlVGZW+HYwEg2c6DrUhEz4N06vVrfCN95kOxSSsQE59+eaCCMtAgdqkgm1VWL6gXGWJXi0B/Lo2Pj1pdxy+p0tNoID9gTLryoq47xOAFuhnn1hme8IEBzEJIT5c7uN6eUJjE= ivan@K9s-Worker-02
+
+otomatis : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCkQjhKp1yGsnzapNztT/PEmVFSC05ROQNkP7uRXFVnRbGMcKCI932ANbEMmcEqVCU3aBmjrF1Epyb1Pcv9Y2O9NX22swQ/9vbLtsHyhh/O8QDsQ7Wrs/DWXtUfIfqkA2bRIUi4aKnukarP+6wKWOAdA3V1O/hX5bH1m/C8tp+SBxnmfxDIyunHwpgnyWNz5Fb9eNDeESpPXigrGYHaeyWL5lxTsA2mWLvIvVZpm0U1ObX17gHwFPbr9vnt6JObZ5UE/PP+WNyo1Luo6ulZ60IwsIun8zc0wcCwSIRHZTFQm2dJX2Bd0etWW15W31nOs5rxMCjLNNgp6Xdd8d0cI4C1FczPTYvArGK9aEIgOsRM3fdIOJmXyzWOEDJjn+nriZsJh2wS0N8xydbkmDxKxRIeKABmd7OHuWD+b7O33AFRH+kw1jB/lp8e1txrBG6bN7b7hkFngjLtRcmhfZbhmqEav6VSwc3zMBaPo/1NuHfEtqkEmn9HKfad3xOB8/PhbNU= otomatis@K9s-Worker-02
+
+K9s-Worker-03 :
+root : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC+AJAYNFr8Hcx/7xcEBeiUzpQqiOvdloHv9+sy9zCtVHF0CCySbd/j4Qa3zFrJby1k/TIdOl9zYYfiXafBBjNhPelpcuhtDfMMoiwlA2dQsrfvQKA9J6hfrlhRMazm7LNAn2wALc8RxH1F9JXPhde17HVwt8vkvQCsGupmnmf2tbsD5pSLrxwkbtCs/slfzCWxb7kCzjIg4fJCuJnVaJ3+HULO9VXhSg5op3vKsCno5SzPefNorDXGJwUwg0L69Ia/J7BUgezwAD1+iibHZ4w7KqMIv8fDAEl87rykLV/YvDcpLZgcR0P4YrplscjIpUUCumT+HnEUqcIj8AZTXjRh/avOlHOZxia4vv2cKIvz8P0qf9ouY3wPIyxVw8Ea+ouqlwK5+VMBohOUsHhB5mUpOo/uW6El1p37rurcWmfyKk9RhDpoHDIXd/ijbxkX/fhSn4UWYncTB7Vmumz3fFhzBmFAjwnkltVOTcagXYO2l8ynLKVHTmx2zn4o6MjLtrc= root@K9s-Worker-03
+
+ivan : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCa+pSrUa0hp1CjGpowV+IFhobM/gdDMm/7zktf5o3tBJBUM9+kYFXcX/sbEXq3I5wOnmWNqfKwtJ/lLUim/rc/Utn0x9Cpp0qlFJCv7uYX8ZpqOHv5+QSfMRP/o7taSanbBDXkVONIZXm1okwgw+HTzZPhZ24vGRWB4uuKjFJ/PfhHZPF59E2p+XIvklkjOWHOZDby9874VBFUM327ynOxwOn07e9qqW3z48RUWvQbOvEawPc2nhPlo/dxbgUDx2I3CwmrIEOnZoFxMxD0FMt0Dkv1MJRzA9mt+e8sVV7DPtcEbQw96HXOhMTKFXkPqIeILUmRMop5dbWRPzDH+FV79I3XEve5a7fuf/BYoaTk/GyEb6k4xNMmO+/MkvNI4D2gP/eLkqNXMnteLsdZANwX/57puukreECk5prVQtr3q/lqnIA+Mfyxsa43O72B1xSNeAWv58ojwAaYGqy9cPleQuUXby1mw/P1FPAG6FUccJG2iXFR1GXDtH2VCKa1gNU= ivan@K9s-Worker-03
+
+otomatis : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDDXEqNpDByEiipWCUuXfjGi9v1NW9MtNS+eYiGPWqdyy4/W3qJWrIa+8Vnelp9MKUwEulPxnrPaqYWwbv67bkp+1qX6YdrGdQj9NuRxKD7pbWlM6i3M5VTz7b9ZEB2y9IgBghBArtT3ju+mKL5cxa0d6zz6l30PcC2UWtCy4+eNILD+Ir7mEfoswWrkPxwxE7KPMDQh9euWFzpeJ32yi3qJVIw5HzXVATVDj+62SJKjBclzxwgYr9YQiLucmJTzVIbcTSY0xL/3LtOjTtrvSoQLEBvlvq4NPcFJCRV4jfAes3+lmbDJdx//KWkWJ30kZf8xZkW6kqkSCLxt6RIH/sX9P71tqfmqjJWfNlw2NdZyg5SQ3Z1gPepeZvyowja9nn4gHmfogMk1WzhCKgk/0N4GupQGVYH5M2v9aACuJjM9jNnYbkGqaCTtmty4SLTxMZNc2gZrKBUdxRGVL1C080Vjq4zXvRAHjnPvKvtngpsnXHMsh9M1rrY7rhXGLn5B3E= otomatis@K9s-Worker-03
+
+K9s-Controller-Manager :
+root : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCbpOD8+CHUg4u+alrlTs03i2VKRK1GIiXAMui5G0dbPq8WTi57LlSp/gW3ib/zb6Ugt5HNv2LocYpwJGVuQrXHZRu9N6vdNOXztMQ+ltETNZ8JSO6zkJUjxqCBq3iZ4xDrQKedRFZk7kVF2Cfh4sdEncVArASyeE4jUSDeJ6j2j8dfCov6dOTjUTwHtwztrcGwNg0u4rScxmUDu5fxDUdxdPLs/icVfQ006eq2UfOvS6peudNcfGkJ5IR6ekgE6803cOGUNp43Df75n8thfHxtrK+QJbroHvfiKuoGYniXWbsaynz6OazZWH0NQA87W8kLNjqpbV2Pb7AHVoYhylDfi7R+j4PcNQmaC+gC2PCvzgdBMIjPKarw1pfb9rBBxYIWfzMBVGisPgxSgzXnxJ9VkuiKHtT1rcTRllNVE8z3GvVXFHrb5U/s8A9SqwsI60CE44pqNXxbIxD70s+9WJhaDy/76oETIpk57Fy6shFITyNuBwNp6tOFN2BHdxT1Jyc= root@K9s-Controller-Manager
+
+ivan : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCxpA5tz5CVhWyak7kWCDITu1VbdnX/y+oj3tNtTI1RMEs4tupFl5jp7qerQe3OjD9g1ZsxVA4G28UQ6eQu2kAx5KpAiiUove+pJ9PsZ0B5QAUhdy6H6hvFjQLJ5lAPchZlhJvHKgxMZCFV5+KvQY+oORMoV0PPAHrgib02l/h48QmePP86pYCgJu9ewJAT/xefiTE6kZJxKVtjpwurelnY8x2KmkUGQ38wQLalWdoNpEOiAc5jAPJ5/NZ5HkM4eOhV1JCeFy+vMolG40lyg+/NIV1UoCyaNARfKSNeizI/oYexdMjWI7peMyiiHfqN5VCoMHM938T31ABHBBaheX0suYw8DqRAStfXW7ePeojXJRosd13exvtkg7Q3BWDwWYJJ7FZAitvpB3kteoZDyaprNvMRcoqEnEY7IWCtPQpd64r9NG4xWcEXkJ2bDekUMhwJ6wlY2voPY8LYBcUTTNvZJUCj+lNK6Up6dFbJXwYv3ZzOnypwXiecmIdkrIXrDCM= ivan@K9s-Controller-Manager
+
+otomatis : ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4hJSx8rdcQLLzGalDnHd1ViiaknprGr5RPwgt3noZ29bvYdDQo4vmxb+phBwyl/7AYoQSm9xPe1sGfjWGewgTKF3j5pwDKE73/0d/gLmVOj65S4qRa5geEhuzRd6+13UGCSBEKa0fa/bb5GMY8d1NJuGBGusRdIf+1KPq05RzNqiXoA25Vo/vEU1PQl4sETpPLig7Tcx5zLQMUTtqktEQ/Emg8QDGEbItoQw27iHkabp5b03sfilvS8v/ZBdMfqDXbpw3W3uTgozFcuXWGqzsepVuWa507j85aY9PifVZUNeWhDNaCIk7//5qSTDIqgGrWY5RYZzxrjy5ocuYREDWVH1JQpzy1/2YTudZ116XgHKQ9CLn7ZiMdbd75Fa7o734bkMd0jBKf3tJ2y2EIw63Y8YC1FvHt6M6Gs1m1iqJ0YBA82n5c5BS2awkYqpTIerSn2eqbfD0oKRjlS39ag1SxL8jYy+rYzQgoqrqx1gKC2jSKIHjCfAX8qMadk+XsmE= otomatis@K9s-Controller-Manager
+
+#Keygen
+#RSA
+#K9s-Controller-Master :
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCZ5L1YVq4dM9LqFaQ+LzyNS3fTozxX20Lngkg2gW/4MtK14DyCzKOicdmmLSnEZLQ0GpzbK/4HV3VUG7mkKnld+VbWy+PfevH/Yb/rtHzenj7mIq49QpM8SjE3oCPVHzu253DjtRJAXwOgJpbUpbDDAemErOKrAWJX6RbnFLcUe8MeWIJya/DzAtAo62soaMd7cZPHIGWKqssnMhZdoD6RStuiLYtkENbuLwLOnUoanz8FKxPuc8HJE4Q4JIPcMLX3IIImwfWRCUuKnRRCw0i/GQ0MklBDoHCsJNIjnevPU9q1lpKZCACWIeiuCTYR1PinJabgtUrPiYLePc0SazdyRgvsQzXIgJNQQ+B4WCNq2ylPvym6N2MhAWNFgg3O+EUX+DGF64Trkur1WPKcI123c6tEpJEREJ9fePBPl6+XAv3RL0ZJR+AekBGAk+m10gcz55RS2n2Q6hUd8PYpTgOyUXgvXwx8ENyTM15hSpuZV8QKG10jgc6oESX1UGN52X0= root@K9s-Controller-Master
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCvkm+9sUWtKKjhbRV+B8SxSqnHaV5SmzER2gw3OwP7FHNHjBSMeVEDpSFvymUE/prqX7eyY8/WrjBd06B3kzVlhV2vYHG4Qemvnyt3vcJ2bAsOWv+KMm+qoXqH3U8RVqWL3F3ohdVNfGK/liTDTy/m3qM6DhJLyMBNsSeBL5J1c2f+9WF6ZYYzevqnNEjEk7+ErShLtEyJOtvFy5CY2frwhL3QBYA31zypwMT5w2IVKV1cGBMMZw2suE43URF4DQLeOhp5ItcF8T8x1J2U04DqaFwuYa8sJSXDl+/MPDYgE67rF2OvPd/sIrN88gTuC9X5Rsob5lr/qCj2IB+SMB6iVHxEEp1L4EHjk0uZN8XYSrFHzcqG2n8vB65cx79WGIzjnFbeZUoHzli6eibMB4Q9cjmJ48hUKJpa9adYeYHLvRPu/55stpl2KtMjv+vGaA431KQXat5XX0/0qFXzcRiH90O/z4/iagAkaNeEGHvcz/GhFAtC0cgordmLhYM6OiU= ivan@K9s-Controller-Master
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDoyRYnAG8+/Vx3yZSlWyojupL4dkj2HInOgk2HiEMnvbw/5+Bgd0bhOxh0t5Ke9aDbR1O4q/Y8GwzDJfhoAoxzZ4EmT7xu1KHK7f3ECwkESXWhCjb+zScerMHyOK1nbm9rOSrpdvc49hxmlVMas8zoqRxhnZdLuvLvt+t7ptkQiDylp2l4Cv+yU8KqduUTaJoQe2QZ/AYa/Ncm7aYjkvQMKy98dsi/iLn9msjVukuSFmydHxjbrJgvWvbDbxQNk6QXxl+nT59L3QKhVSWWXxuR+hQ1yvBFXdr88vjb/LMlb35eYbn0WxIOjY4qKep2o1z6zEZw7vjbTrPx5GIU1rj6NOwtf0smUxyk9zm3g2cEWiDv3wTZNgWFVESWui+2g5GD5vM/z0NE0AZAAWlE+GyBk9XjQ6em0Kgr3v72lX96UOhKCnAAjwf1+DmFnq0MDDA4PCXgm0mKrXrf3jdoNpIH01VaSFHZtJLSlSkSMFRyLFsqR1cMbPwFLNPwY6NZKZE= otomatis@K9s-Controller-Master
+
+#K9s-Worker-01 :
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDHSTKrf50r0QrKfadi4X5ZeqSML4k3hOQ2fXUa1k2Zv3hD27ISPRTSQEWzATMKcrVqHgycTwNiRi+bHbd7UYXUjEeQyD/1BrVBySXO17w5T9w2w2wmelvCAMx3f2yAY8BjWtc4ZRVtfbAtxZpc4hS8hHJNe//QkX3rZFNFVeN7d8egmp4aUtV9Lsif435tB96gHTft4BKaIecSnjMflwd7O8feMYHBieH3dMUwpYlb/IOxkHwYSiPj5eKeRd6yDcs/ntxRR2uHiQ6VISgyY94Sn7RAI/1JN7zvlzklSZ8QKZDzj3vk/2pevqjISthIbpSoJIGQ32RFBxlL/lm9MZPCRzTj2E8b1PZ/xABot2sYrl/80/WG1ybsGPZqb1Pfv60KNWYjIEa0MRZqYbOO9aFKK5tbCeDRc8FA4k51n93XsYIb30/hrCeX3WEUe+zcudG2Po5EJ1bpJ8pAEHdsGZEAa3Cpjq203y82JauiwOu44G+BX/BlzU8pqttBPS4qve8= root@K9s-Worker-01
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDCTau7Ji+HrzATJ9WI40Tols6YmpYTRD/RWDUSi7U5D9uRZ4d5lME8R0yYKoWagm1dVkbALMCYdglCjMHlMU5fpAEWFWBdoVGhVl3LIaR21kY4BiPK/kLj/Nv/bgR47ZE15ezafdqbCwz/sKjwwnE4nMEslENqG6T4+2+YOOyQOGvpeutdEpzNre7/gSnETce/3gnMQp+Dl8bzFCllgPjiOtLEnIZmnSmStg7ycuGLoUVTwhZJjNrvQ6yu1CPPHVZXn5PDQyYjRppv4Gu1+yz6BXfWbCHQRqnH/98N19pw3ygZcqoleIKT+vhUMbDPOJIZLal+YA212sidtSLl4DNBkAcSl3DxsybH2DhQGfAZ8hyFxCEr8oEtU0w8ZDH/AtaPFP1kbjCrws+d+voD5kDE7g7P8tZnU6lMM3zSZ730kpN/wh0/xRjVus2wAps9lFgbDPbNRgDfRrqIY3MxigauyPbicwOOZxU5OMJrY9LgV8DF2dwd+ctIv00b6mXqias= ivan@K9s-Worker-01
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDum1QC/VRm1E3rFJLGnolgU1cU6ZKWrUuTKPoPaww5MBozKhe74L38DuFCNro3a4cqq1K2Gcj52KjEgJZ+ezs+Y0PHCJgaDSKO8MiHBCrz9A4qZupcAIyq0s9iy/pf9K2Ef11OOlgtYCPmYThPeE7cR5GBtMyqEWMBObR4CxsKYJB6sShpPr6Wux0wvOG5Y/L+THmIDIiXyXiLK4Ts5Gy+62vTVP/jW68BkDlMXsFhOV86KA0fnEpmiLL/J/J6ud9f+megKd4c5ans2nd8XNTANHqWu7yUxnzP+JFaY9ObGahaXAmAN8/pEWFl+zozdV9xJRFSwZ5hRP3GJn1Q+sjEZHrQ9WHlOWKQ8yEbw3BUXUH3oFg/sG8cgfeaAGuFe2YHDMy5RAlDa7X/J/v6NU6YLzVSpid/tGgX9DexmXx9ApUgNjIiqyRJv8wHJlKGK3j0/mNfgq0JFUrvCrq5zPU5PFtundQFs3kYhFenmO8SKlo73xXymsNgBnyLIk+Cocs= otomatis@K9s-Worker-01
+
+#K9s-Worker-02 :
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCQSXVLFQiObAqmiAkrOvWLyEMIt/uuGSQN4JjrIi4f7GxEsyQrIjT8v6aWe/I9lzqbR/X6Y9J9uiv024cfemCM1urELdQ6dq9I1EKcwbgrE6hW1gj4HHErS2pVmx4hJhHjk0+1RC57goA983wb5NQXNU4N9KjxLzwle1ljhGOnOsWgbTBldMEibX/nNVCSzKHTzc+smnB13GfD/6AopPmmXmv51Wni/UTOu5HtM0/Z5c/SCs3z//FeTXsCWdVHWC8cI0PjLVHqMaGZKzmvLmeQwn01Vb3TYvOFOq+C1mXafxgboooK1RK9YvFv8IOKsY8bTBUxT9JG9LgXal2WTOxZRS74MaXFGM48gWINfyCD85O8Knd61a+tgLiv7OsNWedWtDJ538ZuEmMIfNPYqoqfUOBn/FKnQTy7qPSdSuM23Wv9DiGAFSJc8ogt+nuAVR/DEVZzTlOH5SK/hW3Rw4FvMkn9f3fuamx6sDoND/0umQZI8gJMaRDcqNMHG8FzpGk= root@K9s-Worker-02
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCqyNmcu29xjaD8yIEkoyII+ZGnEqidYqQnV46Eaw8hMULuSbfwAa+HvZQORyMXGCLWUBc5LLjBOu2u/cSSJIkzgtuaneof+fJL7mMidDxbxTRdKVbOtzC+K6foD4YTBa+Aor1HkfNqryfR2+hoj4BO2z4y4LMgxrfbtlmvAejrcdXRFLgZrhDlRi0HZS+zH2yC6CACcaduUSwrbWZIschxBXq68MrFA+YMcmbf7yK5Keu93X/j+MwQSbYD1bRu/JVLzKWk5Mx8KmdBu3QjFN1Pkt/y5IHOU/SbZtx8cCHe/M93FM+lUR0AamCAsQqdYBskdS/w5H8/PHmvV1z99mCuVZjrDRy24guc0/hhuF0mBJmJsxf6y8gFR5F6QY0BlVGZW+HYwEg2c6DrUhEz4N06vVrfCN95kOxSSsQE59+eaCCMtAgdqkgm1VWL6gXGWJXi0B/Lo2Pj1pdxy+p0tNoID9gTLryoq47xOAFuhnn1hme8IEBzEJIT5c7uN6eUJjE= ivan@K9s-Worker-02
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCkQjhKp1yGsnzapNztT/PEmVFSC05ROQNkP7uRXFVnRbGMcKCI932ANbEMmcEqVCU3aBmjrF1Epyb1Pcv9Y2O9NX22swQ/9vbLtsHyhh/O8QDsQ7Wrs/DWXtUfIfqkA2bRIUi4aKnukarP+6wKWOAdA3V1O/hX5bH1m/C8tp+SBxnmfxDIyunHwpgnyWNz5Fb9eNDeESpPXigrGYHaeyWL5lxTsA2mWLvIvVZpm0U1ObX17gHwFPbr9vnt6JObZ5UE/PP+WNyo1Luo6ulZ60IwsIun8zc0wcCwSIRHZTFQm2dJX2Bd0etWW15W31nOs5rxMCjLNNgp6Xdd8d0cI4C1FczPTYvArGK9aEIgOsRM3fdIOJmXyzWOEDJjn+nriZsJh2wS0N8xydbkmDxKxRIeKABmd7OHuWD+b7O33AFRH+kw1jB/lp8e1txrBG6bN7b7hkFngjLtRcmhfZbhmqEav6VSwc3zMBaPo/1NuHfEtqkEmn9HKfad3xOB8/PhbNU= otomatis@K9s-Worker-02
+
+#K9s-Worker-03 :
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC+AJAYNFr8Hcx/7xcEBeiUzpQqiOvdloHv9+sy9zCtVHF0CCySbd/j4Qa3zFrJby1k/TIdOl9zYYfiXafBBjNhPelpcuhtDfMMoiwlA2dQsrfvQKA9J6hfrlhRMazm7LNAn2wALc8RxH1F9JXPhde17HVwt8vkvQCsGupmnmf2tbsD5pSLrxwkbtCs/slfzCWxb7kCzjIg4fJCuJnVaJ3+HULO9VXhSg5op3vKsCno5SzPefNorDXGJwUwg0L69Ia/J7BUgezwAD1+iibHZ4w7KqMIv8fDAEl87rykLV/YvDcpLZgcR0P4YrplscjIpUUCumT+HnEUqcIj8AZTXjRh/avOlHOZxia4vv2cKIvz8P0qf9ouY3wPIyxVw8Ea+ouqlwK5+VMBohOUsHhB5mUpOo/uW6El1p37rurcWmfyKk9RhDpoHDIXd/ijbxkX/fhSn4UWYncTB7Vmumz3fFhzBmFAjwnkltVOTcagXYO2l8ynLKVHTmx2zn4o6MjLtrc= root@K9s-Worker-03
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCa+pSrUa0hp1CjGpowV+IFhobM/gdDMm/7zktf5o3tBJBUM9+kYFXcX/sbEXq3I5wOnmWNqfKwtJ/lLUim/rc/Utn0x9Cpp0qlFJCv7uYX8ZpqOHv5+QSfMRP/o7taSanbBDXkVONIZXm1okwgw+HTzZPhZ24vGRWB4uuKjFJ/PfhHZPF59E2p+XIvklkjOWHOZDby9874VBFUM327ynOxwOn07e9qqW3z48RUWvQbOvEawPc2nhPlo/dxbgUDx2I3CwmrIEOnZoFxMxD0FMt0Dkv1MJRzA9mt+e8sVV7DPtcEbQw96HXOhMTKFXkPqIeILUmRMop5dbWRPzDH+FV79I3XEve5a7fuf/BYoaTk/GyEb6k4xNMmO+/MkvNI4D2gP/eLkqNXMnteLsdZANwX/57puukreECk5prVQtr3q/lqnIA+Mfyxsa43O72B1xSNeAWv58ojwAaYGqy9cPleQuUXby1mw/P1FPAG6FUccJG2iXFR1GXDtH2VCKa1gNU= ivan@K9s-Worker-03
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDDXEqNpDByEiipWCUuXfjGi9v1NW9MtNS+eYiGPWqdyy4/W3qJWrIa+8Vnelp9MKUwEulPxnrPaqYWwbv67bkp+1qX6YdrGdQj9NuRxKD7pbWlM6i3M5VTz7b9ZEB2y9IgBghBArtT3ju+mKL5cxa0d6zz6l30PcC2UWtCy4+eNILD+Ir7mEfoswWrkPxwxE7KPMDQh9euWFzpeJ32yi3qJVIw5HzXVATVDj+62SJKjBclzxwgYr9YQiLucmJTzVIbcTSY0xL/3LtOjTtrvSoQLEBvlvq4NPcFJCRV4jfAes3+lmbDJdx//KWkWJ30kZf8xZkW6kqkSCLxt6RIH/sX9P71tqfmqjJWfNlw2NdZyg5SQ3Z1gPepeZvyowja9nn4gHmfogMk1WzhCKgk/0N4GupQGVYH5M2v9aACuJjM9jNnYbkGqaCTtmty4SLTxMZNc2gZrKBUdxRGVL1C080Vjq4zXvRAHjnPvKvtngpsnXHMsh9M1rrY7rhXGLn5B3E= otomatis@K9s-Worker-03
+
+#K9s-Controller-Manager :
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCbpOD8+CHUg4u+alrlTs03i2VKRK1GIiXAMui5G0dbPq8WTi57LlSp/gW3ib/zb6Ugt5HNv2LocYpwJGVuQrXHZRu9N6vdNOXztMQ+ltETNZ8JSO6zkJUjxqCBq3iZ4xDrQKedRFZk7kVF2Cfh4sdEncVArASyeE4jUSDeJ6j2j8dfCov6dOTjUTwHtwztrcGwNg0u4rScxmUDu5fxDUdxdPLs/icVfQ006eq2UfOvS6peudNcfGkJ5IR6ekgE6803cOGUNp43Df75n8thfHxtrK+QJbroHvfiKuoGYniXWbsaynz6OazZWH0NQA87W8kLNjqpbV2Pb7AHVoYhylDfi7R+j4PcNQmaC+gC2PCvzgdBMIjPKarw1pfb9rBBxYIWfzMBVGisPgxSgzXnxJ9VkuiKHtT1rcTRllNVE8z3GvVXFHrb5U/s8A9SqwsI60CE44pqNXxbIxD70s+9WJhaDy/76oETIpk57Fy6shFITyNuBwNp6tOFN2BHdxT1Jyc= root@K9s-Controller-Manager
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCxpA5tz5CVhWyak7kWCDITu1VbdnX/y+oj3tNtTI1RMEs4tupFl5jp7qerQe3OjD9g1ZsxVA4G28UQ6eQu2kAx5KpAiiUove+pJ9PsZ0B5QAUhdy6H6hvFjQLJ5lAPchZlhJvHKgxMZCFV5+KvQY+oORMoV0PPAHrgib02l/h48QmePP86pYCgJu9ewJAT/xefiTE6kZJxKVtjpwurelnY8x2KmkUGQ38wQLalWdoNpEOiAc5jAPJ5/NZ5HkM4eOhV1JCeFy+vMolG40lyg+/NIV1UoCyaNARfKSNeizI/oYexdMjWI7peMyiiHfqN5VCoMHM938T31ABHBBaheX0suYw8DqRAStfXW7ePeojXJRosd13exvtkg7Q3BWDwWYJJ7FZAitvpB3kteoZDyaprNvMRcoqEnEY7IWCtPQpd64r9NG4xWcEXkJ2bDekUMhwJ6wlY2voPY8LYBcUTTNvZJUCj+lNK6Up6dFbJXwYv3ZzOnypwXiecmIdkrIXrDCM= ivan@K9s-Controller-Manager
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4hJSx8rdcQLLzGalDnHd1ViiaknprGr5RPwgt3noZ29bvYdDQo4vmxb+phBwyl/7AYoQSm9xPe1sGfjWGewgTKF3j5pwDKE73/0d/gLmVOj65S4qRa5geEhuzRd6+13UGCSBEKa0fa/bb5GMY8d1NJuGBGusRdIf+1KPq05RzNqiXoA25Vo/vEU1PQl4sETpPLig7Tcx5zLQMUTtqktEQ/Emg8QDGEbItoQw27iHkabp5b03sfilvS8v/ZBdMfqDXbpw3W3uTgozFcuXWGqzsepVuWa507j85aY9PifVZUNeWhDNaCIk7//5qSTDIqgGrWY5RYZzxrjy5ocuYREDWVH1JQpzy1/2YTudZ116XgHKQ9CLn7ZiMdbd75Fa7o734bkMd0jBKf3tJ2y2EIw63Y8YC1FvHt6M6Gs1m1iqJ0YBA82n5c5BS2awkYqpTIerSn2eqbfD0oKRjlS39ag1SxL8jYy+rYzQgoqrqx1gKC2jSKIHjCfAX8qMadk+XsmE= otomatis@K9s-Controller-Manager
+
+#Konfigurasi SSH :
+PubkeyAuthentication yes
+PasswordAuthentication yes  # atau no kalau mau pakai key only
+AuthorizedKeysFile .ssh/authorized_keys
+
+Change Permission masing masing user :
+chown -R ivan:ivan /home/ivan/.ssh
+chmod 775 /home/ivan/ -R
+
+chown -R otomatis:otomatis /home/otomatis/.ssh
+chmod 775 /home/otomatis/ -R
+
+
+
+Matikan/Disable Swap :
+
+root@K9s-Controller-Master:~# swapoff -a
+root@K9s-Controller-Master:~# sudo sed -i '/swap/s/^/#/' /etc/fstab 
+root@K9s-Controller-Master:~# swapon --show
+
+
+Set IP Bridge : Setup  ke semua Server (Optional)
+# Step 4: Setup IPv4 bridge on all nodes
+
+# Load the following kernel modules on all the nodes,
+
+root@K9s-Controller-Master:~# cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+root@K9s-Controller-Master:~# sudo modprobe overlay
+root@K9s-Controller-Master:~# sudo modprobe br_netfilter
+
+# Set the following Kernel parameters for Kubernetes
+# params persist across reboots
+
+root@K9s-Controller-Master:~# cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+root@K9s-Controller-Master:~# sysctl --system
+root@K9s-Controller-Master:~# 
+
+
+K9s-Controller-Master : 192.168.99.20 :
+Install Kubernetes :
+root@K9s-Controller-Master:~# apt install curl ca-certificates apt-transport-https -y
+root@K9s-Controller-Master:~# curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+root@K9s-Controller-Master:~# echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+root@K9s-Controller-Master:~# apt update
+root@K9s-Controller-Master:~# sudo apt install -y kubelet=1.26.5-00 kubeadm=1.26.5-00 kubectl=1.26.5-00
+root@K9s-Controller-Master:~# sudo mkdir /etc/containerd
+root@K9s-Controller-Master:~# sudo sh -c "containerd config default > /etc/containerd/config.toml"
+root@K9s-Controller-Master:~# sudo sed -i 's/ SystemdCgroup = false/ SystemdCgroup = true/' /etc/containerd/config.toml
+root@K9s-Controller-Master:~# sudo systemctl restart containerd.service
+root@K9s-Controller-Master:~# sudo systemctl restart kubelet.service
+root@K9s-Controller-Master:~# sudo systemctl enable kubelet.service
+root@K9s-Controller-Master:~# kubeadm config images pull
+root@K9s-Controller-Master:~# kubeadm init --pod-network-cidr=10.10.0.0/24
+root@K9s-Controller-Master:~# mkdir -p $HOME/.kube
+root@K9s-Controller-Master:~# sudo cp -i /etc/kubernetes/admin.conf $Home/.kube/config
+root@K9s-Controller-Master:~# chown $(id -u):$(id -g) $HOME/.kube/config
+
+#Deploy Calico :
+root@K9s-Controller-Master:~# kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/tigera-operator.yaml
+root@K9s-Controller-Master:~# curl https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/custom-resources.yaml -O
+root@K9s-Controller-Master:~# sed -i 's/cidr: 192\.168\.99\.0\/24/cidr: 10.10.0.0\/24/g' custom-resources.yaml
+root@K9s-Controller-Master:~# kubectl create -f custom-resources.yaml
+
+Jika ingin user root yang dapat mengakses kubernetes, set variable KUBECONFIG :
+root@K9s-Controller-Master:~# cat <<EOF >> ~/.bashrc
+export KUBECONFIG=/etc/kubernetes/admin.conf
+EOF
+root@K9s-Controller-Master:~# source ~/.bashrc
+root@K9s-Controller-Master:~# 
+root@K9s-Controller-Master:~# 
+root@K9s-Controller-Master:~# 
+
+
+
+K9s-Controller-Manager : 192.168.99.24 :
+Install Kubernetes 
+root@K9s-Controller-Manager:~# apt install curl ca-certificates apt-transport-https -y
+root@K9s-Controller-Manager:~# curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+root@K9s-Controller-Manager:~# echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+root@K9s-Controller-Manager:~# apt update
+root@K9s-Controller-Manager:~# sudo apt install -y kubelet=1.26.5-00 kubeadm=1.26.5-00 kubectl=1.26.5-00
+root@K9s-Controller-Manager:~# sudo kubeadm join 5.199.162.165:6443 --token b2vll8.ksdkx049daqozr1g --discovery-token-ca-cert-hash sha256:36bcff12c21922fa8eda6592156a9f25b7b168ce6f0c821605d4b4e4ca67172f6
+
+
+K9s-Worker-1 : 192.168.99.21 :
+Install Kubernetes
+root@K9s-Worker-01:~# apt install curl ca-certificates apt-transport-https -y
+root@K9s-Worker-01:~# curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+root@K9s-Worker-01:~# echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+root@K9s-Worker-01:~# apt update
+root@K9s-Worker-01:~# sudo apt install -y kubelet=1.26.5-00 kubeadm=1.26.5-00 kubectl=1.26.5-00
+root@K9s-Worker-01:~# sudo kubeadm join 5.199.162.165:6443 --token b2vll8.ksdkx049daqozr1g --discovery-token-ca-cert-hash sha256:36bcff12c21922fa8eda6592156a9f25b7b168ce6f0c821605d4b4e4ca67172f6
+root@K9s-Worker-01:~#
+
+
+K9s-Worker-2 : 192.168.99.22 :
+Install Kubernetes
+root@K9s-Worker-02:~# apt install curl ca-certificates apt-transport-https -y
+root@K9s-Worker-02:~# curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+root@K9s-Worker-02:~# echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+root@K9s-Worker-02:~# apt update
+root@K9s-Worker-02:~# sudo apt install -y kubelet=1.26.5-00 kubeadm=1.26.5-00 kubectl=1.26.5-00
+root@K9s-Worker-02:~# sudo kubeadm join 5.199.162.165:6443 --token b2vll8.ksdkx049daqozr1g --discovery-token-ca-cert-hash sha256:36bcff12c21922fa8eda6592156a9f25b7b168ce6f0c821605d4b4e4ca67172f6
+
+root@K9s-Worker-02:~# 
+
+
+K9s-Worker-3 : 192.168.99.23 :
+Install Kubernetes
+root@K9s-Worker-03:~# apt install curl ca-certificates apt-transport-https -y
+root@K9s-Worker-03:~# curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+root@K9s-Worker-03:~# echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+root@K9s-Worker-03:~# apt update
+root@K9s-Worker-03:~# sudo apt install -y kubelet=1.26.5-00 kubeadm=1.26.5-00 kubectl=1.26.5-00
+root@K9s-Worker-03:~# sudo kubeadm join 5.199.162.165:6443 --token b2vll8.ksdkx049daqozr1g --discovery-token-ca-cert-hash sha256:36bcff12c21922fa8eda6592156a9f25b7b168ce6f0c821605d4b4e4ca67172f6
+root@K9s-Worker-03:~# 
+
+
